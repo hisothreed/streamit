@@ -7,20 +7,17 @@ import Animated, {
   Layout,
 } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/Ionicons';
-interface Props {
-  keyboardHeight?: number;
-}
 
-function SearchListPlaceholder(props: Props) {
-  if (!props.keyboardHeight) {
-    return null;
-  }
+function SearchListPlaceholder() {
   return (
     <Animated.View
       entering={FadeInDown}
       layout={Layout.easing(Easing.ease)}
       exiting={FadeOutDown}
-      style={[styles.placeholder, {paddingBottom: props.keyboardHeight}]}>
+      style={[
+        styles.placeholder,
+        {paddingTop: Dimensions.get('screen').height / 4},
+      ]}>
       <Icon name={'search'} color={'gray'} size={90} />
       <Text style={styles.placeholderText}>
         Search for your favorite artists, tracks, albums, videos and playlists
@@ -40,7 +37,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 30,
-    height: Dimensions.get('screen').height,
   },
 });
 

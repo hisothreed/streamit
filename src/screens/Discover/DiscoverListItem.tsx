@@ -17,8 +17,6 @@ interface Props {
 }
 
 function DiscoverListItem(props: Props) {
-  console.log(props.genre);
-
   return (
     <Animated.View
       entering={FadeInUp}

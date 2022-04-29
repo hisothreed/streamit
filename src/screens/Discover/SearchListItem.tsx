@@ -6,9 +6,10 @@ import Animated, {
   FadeOutDown,
   Layout,
 } from 'react-native-reanimated';
+import {ISearchable} from 'types/ISearchable';
 
 interface Props {
-  item: {value: string; type: string};
+  item: ISearchable;
   onPress: {(item: any): void};
 }
 

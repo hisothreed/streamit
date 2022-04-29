@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useCallback} from 'react';
 import {
   TouchableOpacity,
   FlatList,
@@ -22,7 +22,7 @@ function DiscoverListHeader(props: Props) {
   const renderItem: ListRenderItem<IGenre> = ({item}) => (
     <DiscoverGenrePickerItem onPress={props.onPressGenre} {...item} />
   );
-  const keyExtractor = (item: IGenre) => item.id.toString();
+  const keyExtractor = useCallback((item: IGenre) => item.id.toString(), []);
   return (
     <View style={styles.container}>
       <View style={styles.calendarContainer}>

@@ -1,4 +1,3 @@
-/* eslint-disable react-native/no-inline-styles */
 import React from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 
@@ -13,28 +12,19 @@ function DiscoverGenrePickerItem(props: Props) {
   const handlePress = () => {
     props.onPress(props.id);
   };
+  const dotOpacity = {
+    opacity: props.isActive ? 1 : 0,
+  };
+  const textColor = {
+    color: props.isActive ? 'white' : 'gray',
+  };
   return (
     <TouchableOpacity
       activeOpacity={0.8}
       onPress={handlePress}
       style={styles.button}>
-      <View
-        style={[
-          styles.dot,
-          {
-            opacity: props.isActive ? 1 : 0,
-          },
-        ]}
-      />
-      <Text
-        style={[
-          styles.text,
-          {
-            color: props.isActive ? 'white' : 'gray',
-          },
-        ]}>
-        {props.name}
-      </Text>
+      <View style={[styles.dot, dotOpacity]} />
+      <Text style={[styles.text, textColor]}>{props.name}</Text>
     </TouchableOpacity>
   );
 }

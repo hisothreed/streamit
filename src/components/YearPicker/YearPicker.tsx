@@ -1,8 +1,8 @@
 import BottomSheet, {
-  BottomSheetBackdrop,
   BottomSheetView,
   useBottomSheetDynamicSnapPoints,
 } from '@gorhom/bottom-sheet';
+import {generateArrayOfYears} from 'lib/helpers';
 import React, {
   forwardRef,
   useMemo,
@@ -13,28 +13,7 @@ import React, {
 import {StyleSheet, Text, TouchableOpacity} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import WheelPicker from 'react-native-wheely';
-
-// Must be in a separate file.
-const Backdrop = props => (
-  <BottomSheetBackdrop
-    {...props}
-    opacity={0.8}
-    appearsOnIndex={0}
-    disappearsOnIndex={-1}
-  />
-);
-
-// Must be in a separate file.
-function generateArrayOfYears() {
-  var max = new Date().getFullYear();
-  var min = 1910;
-  var years: Array<string> = [];
-
-  for (var i = max; i >= min; i--) {
-    years.push(i.toString());
-  }
-  return years;
-}
+import Backdrop from './YearPickerBackdrop';
 
 export interface YearPickerRef {
   present: {(): void};

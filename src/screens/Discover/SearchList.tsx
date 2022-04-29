@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useMemo} from 'react';
+import React, {useEffect, useRef} from 'react';
 import {FlatList, StyleSheet} from 'react-native';
 import Animated, {
   Easing,
@@ -8,11 +8,13 @@ import Animated, {
   Layout,
 } from 'react-native-reanimated';
 import SearchListItem from './SearchListItem';
-import {useKeyboard} from './useKyeboard';
 import Fuse from 'fuse.js';
 import SearchListPlaceholder from './SearchListPlacholder';
 import {IGenre} from 'types/IGenre';
 import {IVideo} from 'types/IVideo';
+import {getUniqueItemsByProperties} from 'lib/helpers';
+import {useKeyboard} from 'lib/hooks';
+import {ISearchable} from 'types/ISearchable';
 
 const options = {
   isCaseSensitive: false,
@@ -35,52 +37,44 @@ interface Props {
   handleSearch: {(searchable: any): void};
 }
 // wouldn't put that here ofcourse, just now to get it done asap
-const isPropValuesEqual = (subject, target, propNames) =>
-  propNames.every(propName => subject[propName] === target[propName]);
-
-const getUniqueItemsByProperties = (items, propNames) =>
-  items.filter(
-    (item, index, array) =>
-      index ===
-      array.findIndex(foundItem =>
-        isPropValuesEqual(foundItem, item, propNames),
-      ),
-  );
 function SearchList(props: Props) {
-  const renderItem = ({item}) => (
-    <SearchListItem onPress={props.handleSearch} item={item} />
-  );
-  const fuse = useMemo(() => {
-    return new Fuse(
-      [
-        ...props.genres.map(g => ({
-          id: g.id,
-          value: g.name,
-          type: 'genre',
-          hrt: 'Genres',
-        })),
-        ...props.videos.map(v => ({
-          id: v.id,
-          value: v.artist,
-          type: 'artist',
-          hrt: 'Artists',
-        })),
-        ...props.videos.map(v => ({
-          id: v.id,
-          value: v.title,
-          type: 'video',
-          hrt: 'Videos',
-        })),
-      ],
-      options,
-    );
+  const {keyboardHeight, keyboardShown} = useKeyboard();
+  const prepareDocs = (): Array<ISearchable> => [
+    ...props.genres.map(g => ({
+      id: g.id,
+      value: g.name,
+      type: 'genre',
+      hrt: 'Genres',
+    })),
+    ...props.videos.map(v => ({
+      id: v.id,
+      value: v.artist,
+      type: 'artist',
+      hrt: 'Artists',
+    })),
+    ...props.videos.map(v => ({
+      id: v.id,
+      value: v.title,
+      type: 'video',
+      hrt: 'Videos',
+    })),
+  ];
+  const fuse = useRef(new Fuse(prepareDocs(), options)).current;
+  useEffect(() => {
+    fuse.setCollection(prepareDocs());
   }, [props.genres, props.videos]);
+  // so if we have results for x in two types of results, only one will be picked
   const data = getUniqueItemsByProperties(
     fuse?.search?.(props.query).map(e => e.item) || [],
     ['value', 'type'],
   );
-  const {keyboardHeight, keyboardShown} = useKeyboard();
+  const renderItem = ({item}) => (
+    <SearchListItem onPress={props.handleSearch} item={item} />
+  );
   const keyExtractor = item => `${item.id}-${item.type}`;
+  const contentContainerStyle = {
+    paddingBottom: keyboardShown ? keyboardHeight : 0,
+  };
   return (
     <Animated.View
       entering={FadeInDown}
@@ -92,14 +86,8 @@ function SearchList(props: Props) {
         keyboardShouldPersistTaps={'handled'}
         data={data}
         keyExtractor={keyExtractor}
-        contentContainerStyle={{
-          paddingBottom: keyboardShown ? keyboardHeight : 0,
-        }}
-        ListEmptyComponent={
-          <SearchListPlaceholder
-            keyboardHeight={keyboardShown ? keyboardHeight : 0}
-          />
-        }
+        contentContainerStyle={contentContainerStyle}
+        ListEmptyComponent={SearchListPlaceholder}
         showsVerticalScrollIndicator={false}
         renderItem={renderItem}
       />

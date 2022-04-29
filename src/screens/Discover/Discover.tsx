@@ -1,8 +1,7 @@
-/* eslint-disable react-native/no-inline-styles */
 import React, {useRef, useState} from 'react';
-import {Keyboard, StatusBar, StyleSheet, View} from 'react-native';
+import {Keyboard, StyleSheet, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {useDiscover} from './useDiscover';
+import {useDiscover} from 'lib/hooks/useDiscover';
 import {
   useAnimatedScrollHandler,
   useDerivedValue,
@@ -13,14 +12,15 @@ import DiscoverList from './DiscoverList';
 import SearchList from './SearchList';
 import DiscoverListHeader from './DiscoverListHeader';
 import DiscoverHeader from './DiscoverHeader';
-import YearPicker, {YearPickerRef} from './YearPicker';
+import YearPicker, {YearPickerRef} from 'components/YearPicker';
+
+type StatusType = 'FOCUSED' | 'DISMISSING' | 'NONE';
 
 function Discover() {
   const yearPickerRef = useRef<YearPickerRef>(null);
   const {
     genres,
     videos,
-    selectedGenres,
     searchable,
     year,
     isLoading,
@@ -34,9 +34,7 @@ function Discover() {
   const [headerHeight, setHeaderHeight] = useState<number>(0);
   const scrollY = useSharedValue(0);
   const [query, setQuery] = useState('');
-  const [status, setStatus] = useState<'FOCUSED' | 'DISMISSING' | 'NONE'>(
-    'NONE',
-  );
+  const [status, setStatus] = useState<StatusType>('NONE');
   const inputValue =
     status === 'FOCUSED' || !searchable
       ? query
@@ -87,7 +85,6 @@ function Discover() {
   return (
     <>
       <View style={styles.container}>
-        <StatusBar barStyle={'light-content'} />
         <DiscoverHeader
           onDismiss={onCancel}
           onFocus={onFocus}
@@ -116,12 +113,7 @@ function Discover() {
               onPressCalendar={onPressCalendar}
               onPressGenre={toggleGenre}
               year={year}
-              genres={
-                genres.map(a => ({
-                  ...a,
-                  isActive: a.isActive || selectedGenres.includes(a.id),
-                })) || []
-              }
+              genres={genres}
             />
           }
           contentContainerStyle={{paddingTop: headerHeight}}

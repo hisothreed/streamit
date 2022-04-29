@@ -1,16 +1,8 @@
-import {useMemo, useState} from 'react';
+import {fetchFeed} from 'lib/api';
+import {useCallback, useEffect, useState} from 'react';
 import {useQuery} from 'react-query';
-import {IGenre} from 'types/IGenre';
+import {ISearchable} from 'types/ISearchable';
 import {IVideo} from 'types/IVideo';
-
-// Actually won't be here also, this must be placed in a separate folder (i prefere under lib/api/)
-const fetchStuff = async (): Promise<{
-  genres: Array<IGenre>;
-  videos: Array<IVideo>;
-}> =>
-  await fetch(
-    'https://raw.githubusercontent.com/XiteTV/frontend-coding-exercise/main/data/dataset.json',
-  ).then(res => res.json());
 
 const typeValueMap = {
   video: 'title',
@@ -18,40 +10,48 @@ const typeValueMap = {
   genre: 'name',
 };
 
-export const useDiscover = () => {
-  const [{selectedGenres, searchable, year}, setFilters] = useState<{
-    selectedGenres: Array<Number>;
-    searchable: any;
-    year: string | null;
-  }>({
-    selectedGenres: [],
-    searchable: null,
-    year: null,
-  });
-  const {data, isLoading} = useQuery('data', fetchStuff, {
-    select: ({videos, genres}) => {
-      const genresMap = genres.reduce((acc, curr) => ({
-        ...acc,
-        [curr.id]: curr,
-      }));
+type DiscoverStateType = {
+  selectedGenres: Array<Number>;
+  searchable: ISearchable | null;
+  year: string | null;
+};
 
-      return {
-        videos: videos.map(video => ({
-          ...video,
-          genre: genresMap[video.genre_id] || 'N/A',
-        })),
-        genres,
-      };
-    },
+export const useDiscover = () => {
+  const [{selectedGenres, searchable, year}, setFilters] =
+    useState<DiscoverStateType>({
+      selectedGenres: [],
+      searchable: null,
+      year: null,
+    });
+
+  const select = useCallback(({videos, genres}) => {
+    const genresMap = genres.reduce((acc, curr) => ({
+      ...acc,
+      [curr.id]: curr,
+    }));
+
+    return {
+      videos: videos.map(video => ({
+        ...video,
+        genre: genresMap[video.genre_id] || 'N/A',
+      })),
+      genres,
+    };
+  }, []);
+
+  const {data, isLoading} = useQuery('data', fetchFeed, {
+    select,
   });
 
   const setSearchable = (value: any) => {
     setFilters(f => ({...f, searchable: value}));
   };
   const toggleGenre = (genreId: number, forceAdd?: boolean) => {
+    // user clicked on "All Genres"
     if (genreId === 0) {
       return setFilters(f => ({
         ...f,
+        // reset to default.
         selectedGenres: [],
       }));
     }
@@ -72,7 +72,15 @@ export const useDiscover = () => {
     }));
   };
 
-  const filteredList = useMemo(() => {
+  const setYear = (value: string | null) => {
+    setFilters(filters => ({
+      ...filters,
+      year: value,
+    }));
+  };
+  const [filteredList, setFilteredList] = useState<Array<IVideo>>([]);
+
+  const prepareFilteredList = useCallback(() => {
     let results = [...(data?.videos || [])];
     if (searchable) {
       results = results.filter(
@@ -87,23 +95,24 @@ export const useDiscover = () => {
         selectedGenres.some(genre => genre === item.genre_id),
       );
     }
-    return results;
-  }, [selectedGenres, searchable, data?.videos, year]);
+    setFilteredList(results);
+  }, [searchable, year, selectedGenres, data?.videos]);
+
+  useEffect(() => {
+    prepareFilteredList();
+  }, [selectedGenres, searchable, data?.videos, year, prepareFilteredList]);
+
   const genres = [
     {id: 0, name: 'All Genres', isActive: selectedGenres.length === 0},
-    ...(data?.genres || []),
+    ...(data?.genres?.map?.(a => ({
+      ...a,
+      isActive: a.isActive || selectedGenres.includes(a.id),
+    })) || []),
   ];
-  const setYear = year => {
-    setFilters(filters => ({
-      ...filters,
-      year,
-    }));
-  };
   return {
     genres,
     videos: data?.videos,
     isLoading,
-    selectedGenres,
     searchable,
     filteredList,
     year,
