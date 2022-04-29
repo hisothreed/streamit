@@ -1,51 +1,70 @@
-import React from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import React, {memo} from 'react';
+import {StyleSheet, Text} from 'react-native';
 import FastImage from 'react-native-fast-image';
+import Animated, {
+  Easing,
+  FadeInUp,
+  FadeOutUp,
+  Layout,
+} from 'react-native-reanimated';
 
-function DiscoverListItem({title, artist, release_year, image_url}) {
+interface Props {
+  title: string;
+  artist: string;
+  releaseYear: number;
+  imageUrl: string;
+  genre: string;
+}
+
+function DiscoverListItem(props: Props) {
+  console.log(props.genre);
+
   return (
-    <View style={styles.container}>
-      <FastImage
-        source={{uri: image_url}}
-        style={{height: 150, width: '100%', borderRadius: 5}}
-      />
-      <Text
-        style={{
-          fontSize: 13,
-          fontWeight: '600',
-          color: 'white',
-          marginTop: 10,
-        }}>
-        {title}
+    <Animated.View
+      entering={FadeInUp}
+      layout={Layout.easing(Easing.ease)}
+      exiting={FadeOutUp}
+      style={styles.container}>
+      <FastImage source={{uri: props.imageUrl}} style={styles.image} />
+      <Text numberOfLines={1} style={styles.title}>
+        {props.title}
       </Text>
-      <Text
-        style={{
-          fontSize: 12,
-          fontWeight: '500',
-          color: 'gray',
-          marginTop: 5,
-        }}>
-        {artist}
+      <Text numberOfLines={1} style={styles.artist}>
+        {props.artist}
       </Text>
-      <Text
-        style={{
-          fontSize: 10,
-          fontWeight: '400',
-          color: 'gray',
-          marginTop: 5,
-        }}>
-        {release_year}
+      <Text style={styles.year}>
+        {props.releaseYear}
+        {!!props.genre && <Text>- {props.genre}</Text>}
       </Text>
-    </View>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    margin: 5,
+    margin: 10,
     borderRadius: 5,
+  },
+  image: {height: 200, width: '100%', borderRadius: 5},
+  year: {
+    fontSize: 10,
+    fontWeight: '400',
+    color: 'gray',
+    marginTop: 5,
+  },
+  artist: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: 'gray',
+    marginTop: 5,
+  },
+  title: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: 'white',
+    marginTop: 10,
   },
 });
 
-export default DiscoverListItem;
+export default memo(DiscoverListItem);

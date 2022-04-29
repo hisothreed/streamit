@@ -1,6 +1,6 @@
 /* eslint-disable react-native/no-inline-styles */
-import React, {useState} from 'react';
-import {Keyboard, StatusBar, View} from 'react-native';
+import React, {useRef, useState} from 'react';
+import {Keyboard, StatusBar, StyleSheet, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useDiscover} from './useDiscover';
 import {
@@ -13,15 +13,21 @@ import DiscoverList from './DiscoverList';
 import SearchList from './SearchList';
 import DiscoverListHeader from './DiscoverListHeader';
 import DiscoverHeader from './DiscoverHeader';
+import YearPicker, {YearPickerRef} from './YearPicker';
 
 function Discover() {
+  const yearPickerRef = useRef<YearPickerRef>(null);
   const {
-    data,
+    genres,
+    videos,
     selectedGenres,
+    searchable,
+    year,
+    isLoading,
+    filteredList,
     toggleGenre,
     setSearchable,
-    searchable,
-    filteredList,
+    setYear,
   } = useDiscover();
   const {top} = useSafeAreaInsets();
   const [titleHeight, setTitleHeight] = useState<number>(0);
@@ -31,6 +37,10 @@ function Discover() {
   const [status, setStatus] = useState<'FOCUSED' | 'DISMISSING' | 'NONE'>(
     'NONE',
   );
+  const inputValue =
+    status === 'FOCUSED' || !searchable
+      ? query
+      : `${searchable.value} in ${searchable.type}`;
   const scrollEventHandler = useAnimatedScrollHandler({
     onScroll: event => {
       scrollY.value = -event.contentOffset.y;
@@ -45,66 +55,88 @@ function Discover() {
     }
     return scrollY.value;
   }, [status]);
-  const onBlur = () => {
+  const onFocus = () => {
+    setStatus('FOCUSED');
+  };
+  const onSearch = (selected: any) => {
+    handleDismiss();
+    if (selected.type === 'genre') {
+      toggleGenre(selected.id, true);
+      setQuery('');
+    } else {
+      setSearchable(selected);
+      setQuery(selected.value);
+    }
+  };
+
+  const onPressCalendar = () => {
+    yearPickerRef.current?.present?.();
+  };
+  const onCancel = () => {
+    setSearchable(null);
+    setQuery('');
+    handleDismiss();
+  };
+  const handleDismiss = () => {
+    Keyboard.dismiss();
     setStatus('DISMISSING');
     setTimeout(() => {
       setStatus('NONE');
     }, 500);
   };
-  const onFocus = () => {
-    setStatus('FOCUSED');
-  };
-  const onSearch = (selected: any) => {
-    setSearchable(selected);
-    Keyboard.dismiss();
-    onBlur();
-    setQuery(selected.value);
-  };
-  const inputValue =
-    status === 'FOCUSED' || !searchable
-      ? query
-      : `${searchable.value} in ${searchable.type}`;
   return (
-    <View style={{flex: 1, backgroundColor: 'black'}}>
-      <StatusBar barStyle={'light-content'} />
-      <DiscoverHeader
-        onBlur={onBlur}
-        onFocus={onFocus}
-        inputValue={inputValue}
-        setHeaderHeight={setHeaderHeight}
-        setTitleHeight={setTitleHeight}
-        headerHeight={headerHeight}
-        titleHeight={titleHeight}
-        scroll={scroll}
-        onChange={setQuery}
-      />
-      {status === 'FOCUSED' && (
-        <SearchList
-          handleSearch={onSearch}
-          query={query}
-          topInset={headerHeight - titleHeight}
-          genres={data?.genres?.array || []}
-          videos={data?.videos || []}
+    <>
+      <View style={styles.container}>
+        <StatusBar barStyle={'light-content'} />
+        <DiscoverHeader
+          onDismiss={onCancel}
+          onFocus={onFocus}
+          inputValue={inputValue}
+          setHeaderHeight={setHeaderHeight}
+          setTitleHeight={setTitleHeight}
+          headerHeight={headerHeight}
+          titleHeight={titleHeight}
+          scroll={scroll}
+          onChange={setQuery}
+          isEditing={status === 'FOCUSED'}
         />
-      )}
-      <DiscoverList
-        renderListHeader={
-          <DiscoverListHeader
-            onPressGenre={toggleGenre}
-            genres={
-              data?.genres?.array.map(a => ({
-                ...a,
-                isActive: a.isActive ?? selectedGenres.includes(a.id),
-              })) || []
-            }
+        {status === 'FOCUSED' && (
+          <SearchList
+            handleSearch={onSearch}
+            query={query}
+            topInset={headerHeight - top}
+            genres={genres || []}
+            videos={videos || []}
           />
-        }
-        contentContainerStyle={{paddingTop: headerHeight}}
-        scrollEventHandler={scrollEventHandler}
-        videos={filteredList}
-      />
-    </View>
+        )}
+        <DiscoverList
+          isLoading={isLoading}
+          renderListHeader={
+            <DiscoverListHeader
+              onPressCalendar={onPressCalendar}
+              onPressGenre={toggleGenre}
+              year={year}
+              genres={
+                genres.map(a => ({
+                  ...a,
+                  isActive: a.isActive || selectedGenres.includes(a.id),
+                })) || []
+              }
+            />
+          }
+          contentContainerStyle={{paddingTop: headerHeight}}
+          scrollEventHandler={scrollEventHandler}
+          videos={filteredList}
+        />
+      </View>
+      {/* wouldn't actually use it this way, it's not performant and not clean enough, instead, it would be presented as a transparent/over-context modal (navigation) */}
+      <YearPicker onSubmit={setYear} ref={yearPickerRef} />
+    </>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {flex: 1, backgroundColor: 'black'},
+});
 
 export default Discover;

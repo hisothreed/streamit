@@ -4,12 +4,15 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  View,
+  TouchableOpacity,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Animated, {
   Extrapolate,
+  FadeInLeft,
+  FadeOutRight,
   interpolate,
+  Layout,
   SharedValue,
   useAnimatedStyle,
 } from 'react-native-reanimated';
@@ -24,8 +27,9 @@ interface Props {
 
   scroll: SharedValue<number>;
   inputValue: string;
+  isEditing: boolean;
   onFocus: {(): void};
-  onBlur: {(): void};
+  onDismiss: {(): void};
   onChange: {(value: string): void};
 }
 
@@ -82,19 +86,32 @@ function DiscoverHeader(props: Props) {
         style={[titleStyle, styles.titleContainer]}>
         <Text style={styles.title}>Discover</Text>
       </Animated.View>
-      <View style={styles.inputContainer}>
-        <Icon name={'search'} size={20} />
-        <TextInput
-          onChangeText={props.onChange}
-          value={props.inputValue}
-          onFocus={props.onFocus}
-          onBlur={props.onBlur}
-          placeholder={'Search for artists, genres, videos..'}
-          style={styles.input}
-          clearButtonMode={'unless-editing'}
-          placeholderTextColor={'gray'}
-        />
-      </View>
+      <Animated.View style={styles.inputWrapper}>
+        <Animated.View
+          layout={Layout.duration(300)}
+          style={styles.inputContainer}>
+          <Icon name={'search'} size={20} />
+          <TextInput
+            onChangeText={props.onChange}
+            value={props.inputValue}
+            onFocus={props.onFocus}
+            placeholder={'Search for artists, genres, videos..'}
+            style={styles.input}
+            clearButtonMode={'always'}
+            placeholderTextColor={'gray'}
+          />
+        </Animated.View>
+        {props.isEditing && (
+          <Animated.View
+            entering={FadeInLeft}
+            layout={Layout.duration(300)}
+            exiting={FadeOutRight}>
+            <TouchableOpacity onPress={props.onDismiss} style={styles.button}>
+              <Text style={styles.buttonText}>Cancel</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        )}
+      </Animated.View>
     </Animated.View>
   );
 }
@@ -113,16 +130,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   inputContainer: {
-    marginHorizontal: 16,
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 5,
     backgroundColor: 'white',
     borderRadius: 10,
-    marginTop: 15,
   },
-  title: {fontSize: 36, fontWeight: '700', color: 'white'},
-  input: {height: 45, paddingLeft: 10, flex: 1, fontWeight: '500'},
+  title: {fontSize: 30, fontWeight: '700', color: 'white'},
+  input: {
+    height: 45,
+    paddingLeft: 10,
+    flex: 1,
+    fontWeight: '500',
+    borderWidth: 0,
+  },
+  button: {
+    height: 50,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonText: {color: 'white'},
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 15,
+    justifyContent: 'center',
+    marginHorizontal: 16,
+  },
 });
 
 export default DiscoverHeader;

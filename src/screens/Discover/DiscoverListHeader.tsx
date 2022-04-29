@@ -1,10 +1,11 @@
 import React from 'react';
 import {
+  TouchableOpacity,
   FlatList,
   ListRenderItem,
-  Pressable,
   StyleSheet,
   View,
+  Text,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import DiscoverGenrePickerItem from './DiscoverGenrePickerItem';
@@ -12,7 +13,9 @@ import {IGenre} from 'types/IGenre';
 
 interface Props {
   genres: Array<IGenre>;
+  year: string | null;
   onPressGenre: {(id: IGenre['id']): void};
+  onPressCalendar: {(): void};
 }
 
 function DiscoverListHeader(props: Props) {
@@ -23,9 +26,10 @@ function DiscoverListHeader(props: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.calendarContainer}>
-        <Pressable style={styles.button}>
-          <Icon name={'ios-calendar-outline'} color={'red'} size={16} />
-        </Pressable>
+        <TouchableOpacity onPress={props.onPressCalendar} style={styles.button}>
+          <Icon name={'chevron-down-sharp'} color={'white'} size={16} />
+          <Text style={styles.year}>{props.year || 'All Years'}</Text>
+        </TouchableOpacity>
       </View>
       <FlatList<IGenre>
         horizontal
@@ -51,19 +55,20 @@ const styles = StyleSheet.create({
     paddingLeft: 5,
   },
   button: {
-    borderRadius: 100,
-    paddingHorizontal: 15,
-    width: 50,
-    height: 50,
+    borderRadius: 5,
+    minWidth: 100,
+    height: 45,
     alignItems: 'center',
     justifyContent: 'center',
     borderColor: 'white',
-    backgroundColor: '#1c1c1c',
     flexDirection: 'row',
+    borderWidth: 1,
+    paddingHorizontal: 5,
   },
   calendarContainer: {
     paddingRight: 5,
   },
+  year: {color: 'white', marginHorizontal: 5, fontWeight: '600'},
 });
 
 export default DiscoverListHeader;

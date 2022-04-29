@@ -6,10 +6,6 @@ import Discover from 'screens/Discover';
 const client = new QueryClient();
 
 const App = () => {
-  // const backgroundStyle = {
-  //   backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  // };
-
   return (
     <QueryClientProvider client={client}>
       <SafeAreaProvider>

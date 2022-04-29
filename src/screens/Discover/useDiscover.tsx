@@ -3,6 +3,7 @@ import {useQuery} from 'react-query';
 import {IGenre} from 'types/IGenre';
 import {IVideo} from 'types/IVideo';
 
+// Actually won't be here also, this must be placed in a separate folder (i prefere under lib/api/)
 const fetchStuff = async (): Promise<{
   genres: Array<IGenre>;
   videos: Array<IVideo>;
@@ -18,32 +19,49 @@ const typeValueMap = {
 };
 
 export const useDiscover = () => {
-  const [{selectedGenres, searchable}, setFilters] = useState({
+  const [{selectedGenres, searchable, year}, setFilters] = useState<{
+    selectedGenres: Array<Number>;
+    searchable: any;
+    year: string | null;
+  }>({
     selectedGenres: [],
     searchable: null,
+    year: null,
   });
   const {data, isLoading} = useQuery('data', fetchStuff, {
-    select: ({genres, videos}) => {
+    select: ({videos, genres}) => {
+      const genresMap = genres.reduce((acc, curr) => ({
+        ...acc,
+        [curr.id]: curr,
+      }));
+
       return {
-        genres: {
-          map: genres.reduce((acc, curr) => ({
-            ...acc,
-            [curr.id]: curr,
-          })),
-          array: [{id: 0, name: 'All', isActive: true}, ...genres],
-        },
-        videos,
+        videos: videos.map(video => ({
+          ...video,
+          genre: genresMap[video.genre_id] || 'N/A',
+        })),
+        genres,
       };
     },
   });
-  const setSearchable = searchable => {
-    setFilters(f => ({...f, searchable}));
+
+  const setSearchable = (value: any) => {
+    setFilters(f => ({...f, searchable: value}));
   };
-  const toggleGenre = genreId => {
+  const toggleGenre = (genreId: number, forceAdd?: boolean) => {
     if (genreId === 0) {
       return setFilters(f => ({
         ...f,
         selectedGenres: [],
+      }));
+    }
+    if (forceAdd) {
+      // or we can use "Set"
+      return setFilters(f => ({
+        ...f,
+        selectedGenres: f.selectedGenres.includes(genreId)
+          ? f.selectedGenres
+          : [...f.selectedGenres, genreId],
       }));
     }
     setFilters(f => ({
@@ -61,21 +79,36 @@ export const useDiscover = () => {
         item => item[typeValueMap[searchable.type]] === searchable.value,
       );
     }
-    if (!!selectedGenres.length) {
+    if (year) {
+      results = results.filter(item => +item.release_year === +year);
+    }
+    if (selectedGenres.length) {
       results = results.filter(item =>
         selectedGenres.some(genre => genre === item.genre_id),
       );
     }
     return results;
-  }, [selectedGenres, searchable]);
-
+  }, [selectedGenres, searchable, data?.videos, year]);
+  const genres = [
+    {id: 0, name: 'All Genres', isActive: selectedGenres.length === 0},
+    ...(data?.genres || []),
+  ];
+  const setYear = year => {
+    setFilters(filters => ({
+      ...filters,
+      year,
+    }));
+  };
   return {
-    data,
+    genres,
+    videos: data?.videos,
     isLoading,
     selectedGenres,
     searchable,
+    filteredList,
+    year,
     toggleGenre,
     setSearchable,
-    filteredList,
+    setYear,
   };
 };

@@ -8,14 +8,13 @@ import Animated, {
 } from 'react-native-reanimated';
 
 interface Props {
-  value: string;
-  type: string;
+  item: {value: string; type: string};
   onPress: {(item: any): void};
 }
 
 function SearchListItem(props: Props) {
   const onPress = () => {
-    props.onPress({value: props.value, type: props.type});
+    props.onPress(props.item);
   };
   // TODO: actually highlight the matching characters using the 'matches' from fuse
   // since it gives exactly the index of the matched substring :)
@@ -26,7 +25,8 @@ function SearchListItem(props: Props) {
       exiting={FadeOutDown}>
       <Pressable onPress={onPress} style={styles.button}>
         <Text style={styles.label}>
-          {props.value} <Text style={styles.sublabel}>in {props.hrt}</Text>
+          {props.item.value}{' '}
+          <Text style={styles.sublabel}>in {props.item.hrt}</Text>
         </Text>
       </Pressable>
     </Animated.View>

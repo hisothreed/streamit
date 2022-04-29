@@ -20,7 +20,7 @@ const options = {
   shouldSort: true,
   includeMatches: true,
   findAllMatches: false,
-  minMatchCharLength: 1,
+  minMatchCharLength: 2,
   location: 0,
   distance: 10,
   threshold: 0.3,
@@ -34,6 +34,7 @@ interface Props {
   query: string;
   handleSearch: {(searchable: any): void};
 }
+// wouldn't put that here ofcourse, just now to get it done asap
 const isPropValuesEqual = (subject, target, propNames) =>
   propNames.every(propName => subject[propName] === target[propName]);
 
@@ -47,7 +48,7 @@ const getUniqueItemsByProperties = (items, propNames) =>
   );
 function SearchList(props: Props) {
   const renderItem = ({item}) => (
-    <SearchListItem onPress={props.handleSearch} {...item} />
+    <SearchListItem onPress={props.handleSearch} item={item} />
   );
   const fuse = useMemo(() => {
     return new Fuse(
@@ -78,7 +79,7 @@ function SearchList(props: Props) {
     fuse?.search?.(props.query).map(e => e.item) || [],
     ['value', 'type'],
   );
-  const {keyboardHeight} = useKeyboard();
+  const {keyboardHeight, keyboardShown} = useKeyboard();
   const keyExtractor = item => `${item.id}-${item.type}`;
   return (
     <Animated.View
@@ -88,11 +89,16 @@ function SearchList(props: Props) {
       style={[styles.container, {top: props.topInset}]}>
       <FlatList
         scrollEventThrottle={1}
+        keyboardShouldPersistTaps={'handled'}
         data={data}
         keyExtractor={keyExtractor}
-        contentContainerStyle={{paddingBottom: keyboardHeight}}
+        contentContainerStyle={{
+          paddingBottom: keyboardShown ? keyboardHeight : 0,
+        }}
         ListEmptyComponent={
-          <SearchListPlaceholder keyboardHeight={keyboardHeight} />
+          <SearchListPlaceholder
+            keyboardHeight={keyboardShown ? keyboardHeight : 0}
+          />
         }
         showsVerticalScrollIndicator={false}
         renderItem={renderItem}

@@ -8,6 +8,7 @@
     "allowJs": true /* Allow javascript files to be compiled. */,
     "jsx": "react-native" /* Specify JSX code generation: 'preserve', 'react-native', or 'react'. */,
     "noEmit": true /* Do not emit outputs. */,
+    "noImplicitAny": false,
     "isolatedModules": true /* Transpile each file as a separate module (similar to 'ts.transpileModule'). */,
     /* Strict Type-Checking Options */
     "strict": true /* Enable all strict type-checking options. */,
