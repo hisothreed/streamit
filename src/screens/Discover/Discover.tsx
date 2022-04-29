@@ -1,182 +1,107 @@
 /* eslint-disable react-native/no-inline-styles */
-
 import React, {useState} from 'react';
-import Icon from 'react-native-vector-icons/Ionicons';
-import {
-  FlatList,
-  LayoutChangeEvent,
-  Pressable,
-  StatusBar,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import {Keyboard, StatusBar, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useDiscover} from './useDiscover';
-import FastImage from 'react-native-fast-image';
+import {
+  useAnimatedScrollHandler,
+  useDerivedValue,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
+import DiscoverList from './DiscoverList';
+import SearchList from './SearchList';
+import DiscoverListHeader from './DiscoverListHeader';
+import DiscoverHeader from './DiscoverHeader';
 
 function Discover() {
-  const {data} = useDiscover();
+  const {
+    data,
+    selectedGenres,
+    toggleGenre,
+    setSearchable,
+    searchable,
+    filteredList,
+  } = useDiscover();
   const {top} = useSafeAreaInsets();
-  const [title, setTitle] = useState<number>(0);
-  const [header, setHeader] = useState<number>(0);
-  const handleTitleLayout = (e: LayoutChangeEvent) => {
-    setTitle(e.nativeEvent.layout.height);
+  const [titleHeight, setTitleHeight] = useState<number>(0);
+  const [headerHeight, setHeaderHeight] = useState<number>(0);
+  const scrollY = useSharedValue(0);
+  const [query, setQuery] = useState('');
+  const [status, setStatus] = useState<'FOCUSED' | 'DISMISSING' | 'NONE'>(
+    'NONE',
+  );
+  const scrollEventHandler = useAnimatedScrollHandler({
+    onScroll: event => {
+      scrollY.value = -event.contentOffset.y;
+    },
+  });
+  const scroll = useDerivedValue(() => {
+    if (status === 'FOCUSED') {
+      return withTiming(-(titleHeight + top), {duration: 300});
+    }
+    if (status === 'DISMISSING') {
+      return withTiming(scrollY.value, {duration: 300});
+    }
+    return scrollY.value;
+  }, [status]);
+  const onBlur = () => {
+    setStatus('DISMISSING');
+    setTimeout(() => {
+      setStatus('NONE');
+    }, 500);
   };
+  const onFocus = () => {
+    setStatus('FOCUSED');
+  };
+  const onSearch = (selected: any) => {
+    setSearchable(selected);
+    Keyboard.dismiss();
+    onBlur();
+    setQuery(selected.value);
+  };
+  const inputValue =
+    status === 'FOCUSED' || !searchable
+      ? query
+      : `${searchable.value} in ${searchable.type}`;
   return (
     <View style={{flex: 1, backgroundColor: 'black'}}>
       <StatusBar barStyle={'light-content'} />
-      {/* HEADER */}
-      <View
-        onLayout={e => {
-          setHeader(e.nativeEvent.layout.height);
-        }}
-        style={{
-          top: 0,
-          zIndex: 10,
-          backgroundColor: 'black',
-          width: '100%',
-          position: 'absolute',
-          paddingTop: top + 30,
-          paddingBottom: 15,
-          flexDirection: 'column',
-        }}>
-        <View
-          onLayout={handleTitleLayout}
-          style={{
-            paddingHorizontal: 16,
-          }}>
-          <Text style={{fontSize: 36, fontWeight: '700', color: 'white'}}>
-            Discover
-          </Text>
-        </View>
-        <View
-          style={{
-            marginHorizontal: 16,
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: 5,
-            backgroundColor: 'white',
-            borderRadius: 10,
-            marginTop: 15,
-          }}>
-          <Icon name={'search'} size={20} />
-          <TextInput
-            placeholder={'Search'}
-            style={{height: 45, paddingLeft: 10, flex: 1, fontWeight: '500'}}
-            clearButtonMode={'unless-editing'}
-            placeholderTextColor={'gray'}
+      <DiscoverHeader
+        onBlur={onBlur}
+        onFocus={onFocus}
+        inputValue={inputValue}
+        setHeaderHeight={setHeaderHeight}
+        setTitleHeight={setTitleHeight}
+        headerHeight={headerHeight}
+        titleHeight={titleHeight}
+        scroll={scroll}
+        onChange={setQuery}
+      />
+      {status === 'FOCUSED' && (
+        <SearchList
+          handleSearch={onSearch}
+          query={query}
+          topInset={headerHeight - titleHeight}
+          genres={data?.genres?.array || []}
+          videos={data?.videos || []}
+        />
+      )}
+      <DiscoverList
+        renderListHeader={
+          <DiscoverListHeader
+            onPressGenre={toggleGenre}
+            genres={
+              data?.genres?.array.map(a => ({
+                ...a,
+                isActive: a.isActive ?? selectedGenres.includes(a.id),
+              })) || []
+            }
           />
-        </View>
-      </View>
-      {/* ==== HEADER ==== */}
-
-      <FlatList<typeof data.videos[0]>
-        numColumns={2}
-        ListHeaderComponent={
-          <View
-            style={{
-              flexDirection: 'row',
-              paddingBottom: 20,
-              paddingLeft: 16,
-            }}>
-            <View
-              style={{
-                paddingRight: 5,
-              }}>
-              <Pressable
-                style={{
-                  borderRadius: 100,
-                  paddingHorizontal: 15,
-                  width: 50,
-                  height: 50,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderColor: 'white',
-                  backgroundColor: '#1c1c1c',
-                  flexDirection: 'row',
-                }}>
-                <Icon name={'ios-calendar-outline'} color={'red'} size={16} />
-              </Pressable>
-            </View>
-            <FlatList
-              horizontal
-              data={data?.genres?.array || []}
-              stickyHeaderIndices={[0]}
-              contentContainerStyle={{
-                paddingRight: 16,
-                paddingLeft: 5,
-              }}
-              showsHorizontalScrollIndicator={false}
-              keyExtractor={item => item.id.toString()}
-              renderItem={({item}) => (
-                <Pressable
-                  style={{
-                    marginRight: 5,
-                    borderRadius: 100,
-                    paddingHorizontal: 15,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    height: 50,
-                    borderColor: 'white',
-                    backgroundColor: '#1c1c1c',
-                  }}>
-                  <Text style={{color: 'white', fontWeight: '500'}}>
-                    {item.name}
-                  </Text>
-                </Pressable>
-              )}
-            />
-          </View>
         }
-        data={data?.videos || []}
-        contentContainerStyle={{
-          paddingTop: header,
-        }}
-        columnWrapperStyle={{
-          paddingHorizontal: 16,
-          paddingBottom: 10,
-        }}
-        renderItem={({item}) => (
-          <View
-            style={{
-              flex: 1,
-              margin: 5,
-              borderRadius: 5,
-            }}>
-            <FastImage
-              source={{uri: item.image_url}}
-              style={{height: 150, width: '100%', borderRadius: 5}}
-            />
-            <Text
-              style={{
-                fontSize: 13,
-                fontWeight: '600',
-                color: 'white',
-                marginTop: 10,
-              }}>
-              {item.title}
-            </Text>
-            <Text
-              style={{
-                fontSize: 12,
-                fontWeight: '500',
-                color: 'gray',
-                marginTop: 5,
-              }}>
-              {item.artist}
-            </Text>
-            <Text
-              style={{
-                fontSize: 10,
-                fontWeight: '400',
-                color: 'gray',
-                marginTop: 5,
-              }}>
-              {item.release_year}
-            </Text>
-          </View>
-        )}
+        contentContainerStyle={{paddingTop: headerHeight}}
+        scrollEventHandler={scrollEventHandler}
+        videos={filteredList}
       />
     </View>
   );

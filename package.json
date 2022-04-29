@@ -11,7 +11,9 @@
   },
   "dependencies": {
     "babel-plugin-module-resolver": "^4.1.0",
+    "fuse.js": "^6.5.3",
     "react": "17.0.2",
+    "react-freeze": "^1.0.0",
     "react-native": "0.68.1",
     "react-native-fast-image": "^8.5.11",
     "react-native-reanimated": "^2.8.0",
@@ -25,6 +27,7 @@
     "@react-native-community/eslint-config": "^2.0.0",
     "@types/jest": "^26.0.23",
     "@types/react-native": "^0.67.3",
+    "@types/react-native-vector-icons": "^6.4.10",
     "@types/react-test-renderer": "^17.0.1",
     "@typescript-eslint/eslint-plugin": "^5.17.0",
     "@typescript-eslint/parser": "^5.17.0",
